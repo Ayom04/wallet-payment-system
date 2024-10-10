@@ -1,6 +1,7 @@
 from django.db import models
 import uuid
 from user.models import User
+from wallet.models import Wallet
 
 
 class Payment(models.Model):
@@ -11,6 +12,8 @@ class Payment(models.Model):
         max_length=255, default=uuid.uuid4, editable=False, unique=True, primary_key=True)
     user_id = models.ForeignKey(
         User, related_name='user_payments', on_delete=models.CASCADE)
+    wallet_id = models.ForeignKey(
+        Wallet, related_name='wallet_payments', on_delete=models.CASCADE)
     amount = models.DecimalField(max_digits=20, decimal_places=2)
     payment_reference = models.CharField(max_length=255)
     payment_status = models.CharField(max_length=255)
@@ -18,4 +21,4 @@ class Payment(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
-        return self.payment_id
+        return str(self.payment_id)

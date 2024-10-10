@@ -1,7 +1,7 @@
 from django.db import models
 import uuid
 from user.models import User
-# Create your models here.
+from wallet.models import Wallet
 
 
 class Transcation(models.Model):
@@ -21,6 +21,8 @@ class Transcation(models.Model):
         max_length=255, default=uuid.uuid4, editable=False, unique=True, primary_key=True)
     user_id = models.ForeignKey(
         User, related_name='user_transactions', on_delete=models.CASCADE)
+    wallet_id = models.ForeignKey(
+        Wallet, related_name='wallet_transactions', on_delete=models.CASCADE)
     amount = models.DecimalField(max_digits=20, decimal_places=2)
     transaction_type = models.CharField(
         max_length=255, choices=TransactionType.choices)
@@ -30,4 +32,4 @@ class Transcation(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
-        return self.transaction_id
+        return str(self.transaction_id)
