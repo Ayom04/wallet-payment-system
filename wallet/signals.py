@@ -8,7 +8,6 @@ from wallet.models import Wallet
 def create_wallet(sender, instance, created, **kwargs):
     if created:
         Wallet.objects.create(user_id=instance)
-        print('Wallet created')
 
 
 # @receiver(post_save, sender=User)

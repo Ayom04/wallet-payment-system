@@ -6,8 +6,15 @@ from user.serializer import UserSerializer, LoginSerializer
 from user.authentication import JWTAuthentication
 from wallet.models import Wallet
 from rest_framework.permissions import IsAuthenticated
+from drf_yasg.utils import swagger_auto_schema
+from drf_yasg import openapi
 
 
+@swagger_auto_schema(
+    method='post',
+    operation_description="Create a new user",
+    request_body=UserSerializer,
+    responses={201: "User Created", 400: "Bad Request"})
 @api_view(['POST'])
 def create_user(request):
     serializer = UserSerializer(data=request.data)
@@ -25,6 +32,11 @@ def create_user(request):
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
+@swagger_auto_schema(
+    method='post',
+    operation_description="Login a user",
+    request_body=LoginSerializer,
+    responses={200: "Login Successful", 400: "Bad Request"})
 @api_view(['POST'])
 def login(request):
     serializer = LoginSerializer(data=request.data)
@@ -45,14 +57,22 @@ def login(request):
 
 
 class UserView(views.APIView):
+
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
 
+    @swagger_auto_schema(
+        operation_description="Get user details",
+        responses={200: UserSerializer})
     def get(self, request):
         user = request.user
         serializer = UserSerializer(user)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
+    @swagger_auto_schema(
+        operation_description="Update user details",
+        request_body=UserSerializer,
+        responses={200: UserSerializer, 400: "Bad Request"})
     def patch(self, request):
         user = request.user
         serializer = UserSerializer(user, data=request.data, partial=True)
@@ -61,6 +81,9 @@ class UserView(views.APIView):
             return Response(serializer.data, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+    @swagger_auto_schema(
+        operation_description="Delete user",
+        responses={204: "User deleted Successfully"})
     def delete(self, request):
         user = request.user
         user.is_active = False

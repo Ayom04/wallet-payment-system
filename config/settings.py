@@ -49,6 +49,8 @@ INSTALLED_APPS = [
     'rest_framework',
     'rest_framework.authtoken',
     'rest_framework_simplejwt',
+    'drf_yasg',
+    'rest_framework_swagger'
 ]
 
 MIDDLEWARE = [
@@ -146,4 +148,23 @@ SIMPLE_JWT = {
 
 REST_FRAMEWORK = {
 
+}
+
+SWAGGER_SETTINGS = {
+    'SECURITY_DEFINITIONS': {
+        'Bearer': {
+            'type': 'apiKey',
+            'name': 'Authorization',
+            'in': 'header',
+        }
+    },
+    'USE_SESSION_AUTH': False,
+    'DEFAULT_AUTO_SCHEMA_CLASS': 'drf_yasg.inspectors.SwaggerAutoSchema',
+    'JSON_EDITOR': True,
+
+}
+
+ENV_VARIABLES = {
+    'PAYMENT_BASE_URL': os.getenv('PAYMENT_BASE_URL'),
+    'PAYMENT_SECRET_KEY': os.getenv('PAYMENT_SECRET_KEY')
 }

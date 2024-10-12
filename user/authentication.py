@@ -64,7 +64,6 @@ class JWTAuthentication(authentication.BasicAuthentication):
         try:
             jwt_token = UntypedToken(token)
         except TokenError as e:
-            print("Token validation error:", str(e))
             raise AuthenticationFailed({"error": str(e)},
                                        code=status.HTTP_401_UNAUTHORIZED)
 

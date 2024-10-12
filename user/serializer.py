@@ -1,7 +1,7 @@
 from rest_framework import serializers
 from user.models import User
 from rest_framework import status
-# from wallet.serializer import WalletSerializer
+from wallet.serializer import WalletSerializer
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -9,13 +9,14 @@ class UserSerializer(serializers.ModelSerializer):
         style={'input_type': 'password'}, write_only=True)
     password = serializers.CharField(write_only=True, required=True, style={
                                      'input_type': 'password'})
+    user_wallet = WalletSerializer(read_only=True)
 
     class Meta:
         model = User
         exclude = ["user_id", "created_at", "updated_at", "is_active", "is_admin", "is_staff",
                    "is_superuser", "is_bvn_verified", "is_nin_verified", "is_user_verified"]
         read_only_fields = ['user_id', "created_at", "updated_at", "password", "is_active", "is_admin",
-                            "is_staff", "is_superuser", "is_bvn_verified", "is_nin_verified", "is_user_verified"]
+                            "is_staff", "is_superuser", "is_bvn_verified", "is_nin_verified", "is_user_verified", "user_wallet"]
         extra_kwargs = {
             'password': {'required': True},
             'email': {'required': True},
@@ -57,7 +58,6 @@ class UserSerializer(serializers.ModelSerializer):
         for field in read_only_fields:
             validated_data.pop(field, None)
 
-        print(validated_data)
         return super().update(instance, validated_data)
 
 
