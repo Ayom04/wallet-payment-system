@@ -7,8 +7,8 @@ def send_email(subject, receiver_email, template_name, context):
     email_html_message = render_to_string(template_name, context)
     email = EmailMessage(
         subject,
-        settings.ENV_VARIABLES['GMAIL_EMAIL'],
         email_html_message,
+        settings.ENV_VARIABLES['GMAIL_EMAIL'],
         [receiver_email],
     )
     email.content_subtype = "html"
