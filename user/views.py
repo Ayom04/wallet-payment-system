@@ -8,6 +8,9 @@ from wallet.models import Wallet
 from rest_framework.permissions import IsAuthenticated
 from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
+from utils.helper import generate_otp
+from user.models import Otp
+from services.email import send_email
 
 
 @swagger_auto_schema(
@@ -27,6 +30,15 @@ def create_user(request):
             wallet_balance = round(float(wallet.amount_after), 2)
         except Wallet.DoesNotExist:
             wallet_balance = 0.00
+
+        otp_code = generate_otp()
+        Otp.objects.create(user_id=user, otp_code=otp_code)
+        context = {
+            "name": f"{user.first_name} {user.last_name}",
+            "otp": otp_code
+        }
+        send_email("Your One-Time Password (OTP)",
+                   user.email, "emails/otp.html", context)
 
         return Response({"message": "user created successfully", "data": {"user": serializer.data, wallet_balance: wallet_balance}}, status=status.HTTP_201_CREATED)
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

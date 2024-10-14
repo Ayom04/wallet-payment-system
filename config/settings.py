@@ -68,7 +68,7 @@ ROOT_URLCONF = 'config.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [os.path.join(BASE_DIR, 'templates')],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -166,5 +166,19 @@ SWAGGER_SETTINGS = {
 
 ENV_VARIABLES = {
     'PAYMENT_BASE_URL': os.getenv('PAYMENT_BASE_URL'),
-    'PAYMENT_SECRET_KEY': os.getenv('PAYMENT_SECRET_KEY')
+    'PAYMENT_SECRET_KEY': os.getenv('PAYMENT_SECRET_KEY'),
+    'GMAIL_EMAIL': os.getenv('G_MAIL'),
+    'GMAIL_PASSWORD': os.getenv('G_MAIL_PASS'),
+    'ENVIRONMENT': os.getenv('DJANGO_ENV', 'development')
 }
+
+if ENV_VARIABLES['ENVIRONMENT'] == 'production':
+    EMAIL_HOST = 'smtp.gmail.com'
+    EMAIL_PORT = 465
+    EMAIL_USE_TLS = False
+    EMAIL_USE_SSL = True
+    EMAIL_HOST_USER = ENV_VARIABLES['GMAIL_EMAIL']
+    EMAIL_HOST_PASSWORD = ENV_VARIABLES['GMAIL_PASSWORD']
+    DEFAULT_FROM_EMAIL = ENV_VARIABLES['GMAIL_EMAIL']
+else:
+    EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'

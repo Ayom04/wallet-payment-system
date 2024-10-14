@@ -37,7 +37,7 @@ class UserSerializer(serializers.ModelSerializer):
         if check_user_exists:
             raise serializers.ValidationError(
                 {"email": "User with this email already exists"}, code=status.HTTP_400_BAD_REQUEST)
-        print(validated_data)
+
         user = User.objects.create_user(
             **validated_data
         )

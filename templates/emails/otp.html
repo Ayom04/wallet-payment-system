@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>One-Time Password (OTP)</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        background-color: #f4f4f4;
+        padding: 20px;
+      }
+
+      .otp-container {
+        background-color: #ffffff;
+        padding: 20px;
+        border-radius: 8px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+      }
+
+      p {
+        margin-bottom: 15px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="otp-container">
+      <p>Welcome {{ name }}</p>
+      <p>
+        Your One-Time Password (OTP) for account verification is:
+        <strong>{{ otp }}</strong>
+      </p>
+      <p>Please use this OTP to complete your registration process.</p>
+      <p>
+        If you didn't request this OTP or have any concerns, please contact our
+        support team immediately.
+      </p>
+      <p>
+        Best regards,<br />
+        Ayomide
+      </p>
+    </div>
+  </body>
+</html>
