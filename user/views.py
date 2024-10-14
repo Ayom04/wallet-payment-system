@@ -9,8 +9,10 @@ from rest_framework.permissions import IsAuthenticated
 from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
 from utils.helper import generate_otp
-from user.models import Otp
+from user.models import Otp, User
 from services.email import send_email
+from django.utils import timezone
+from datetime import timedelta
 
 
 @swagger_auto_schema(
@@ -37,8 +39,8 @@ def create_user(request):
             "name": f"{user.first_name} {user.last_name}",
             "otp": otp_code
         }
-        send_email("Your One-Time Password (OTP)",
-                   user.email, "emails/otp.html", context)
+        # send_email("Your One-Time Password (OTP)",
+        #            user.email, "emails/otp.html", context)
 
         return Response({"message": "user created successfully", "data": {"user": serializer.data, wallet_balance: wallet_balance}}, status=status.HTTP_201_CREATED)
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
@@ -101,3 +103,53 @@ class UserView(views.APIView):
         user.is_active = False
         user.save()
         return Response({"message": "User deleted Successfully"}, status=status.HTTP_204_NO_CONTENT)
+
+
+@swagger_auto_schema(
+    method='get',
+    operation_description="Verify user",
+    responses={200: "User Verified", 400: "Bad Request"})
+@api_view(['GET'])
+def verify_user(request, otp, email):
+    try:
+
+        check_otp = Otp.objects.filter(otp_code=otp).values().first()
+        user = User.objects.filter(email=email).values().first()
+
+        if user.get('is_user_verified'):
+            return Response({"message": "User is already verified."}, status=status.HTTP_400_BAD_REQUEST)
+
+        otp_creation_time = check_otp.get('created_at')
+        if otp_creation_time and (timezone.now() - otp_creation_time) > timedelta(minutes=1):
+            return Response({"message": "OTP has expired."}, status=status.HTTP_400_BAD_REQUEST)
+
+        User.objects.filter(email=email).update(is_user_verified=True)
+
+        Otp.objects.filter(otp_code=otp).delete()
+
+        return Response({"message": "User Verified"}, status=status.HTTP_200_OK)
+
+    except Otp.DoesNotExist:
+        return Response({"message": "Invalid OTP"}, status=status.HTTP_400_BAD_REQUEST)
+
+
+@swagger_auto_schema(
+    method='get',
+    operation_description="Resend OTP",
+    responses={200: "OTP Sent", 400: "Bad Request"})
+@api_view(['GET'])
+def resend_otp(request, email):
+    user = User.objects.filter(email=email).first()
+    if not user:
+        return Response({"message": "User does not exist"}, status=status.HTTP_400_BAD_REQUEST)
+
+    otp_code = generate_otp()
+    Otp.objects.create(user_id=user, otp_code=otp_code)
+    context = {
+        "name": f"{user.first_name} {user.last_name}",
+        "otp": otp_code
+    }
+    send_email("Your One-Time Password (OTP)",
+               user.email, "emails/otp.html", context)
+
+    return Response({"message": "OTP Sent"}, status=status.HTTP_200_OK)
