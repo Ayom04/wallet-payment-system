@@ -6,7 +6,7 @@ from django.core.validators import MinValueValidator
 class PaymentSerializer(serializers.ModelSerializer):
     class Meta:
         model = Payment
-        fields = '__all__'
+        fields = ['payment_id', 'amount', 'created_at',"payment_reference","payment_status"]
 
 
 class StartPaymentSerializer(serializers.Serializer):
