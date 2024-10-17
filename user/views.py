@@ -2,7 +2,7 @@ from django.shortcuts import render
 from rest_framework.response import Response
 from rest_framework import status, views
 from rest_framework.decorators import api_view, permission_classes, authentication_classes
-from user.serializer import UserSerializer, LoginSerializer
+from user.serializer import UserSerializer, LoginSerializer, ForgetPasswordSerializer
 from user.authentication import JWTAuthentication
 from wallet.models import Wallet
 from rest_framework.permissions import IsAuthenticated
@@ -125,6 +125,7 @@ class UserView(views.APIView):
     responses={200: "User Verified", 400: "Bad Request"})
 @api_view(['GET'])
 @permission_classes([AllowAny])
+@authentication_classes([])
 def verify_user(request, otp, email):
     try:
 
@@ -158,6 +159,7 @@ def verify_user(request, otp, email):
     responses={200: "OTP Sent", 400: "Bad Request"})
 @api_view(['GET'])
 @permission_classes([AllowAny])
+@authentication_classes([])
 def resend_otp(request, email):
     user = User.objects.filter(email=email).first()
     if not user:
@@ -169,7 +171,92 @@ def resend_otp(request, email):
         "name": f"{user.first_name} {user.last_name}",
         "otp": otp_code
     }
-    send_email("Your One-Time Password (OTP)",
+    send_email("RESEND OTP",
                user.email, "emails/otp.html", context)
 
     return Response({"message": "OTP Sent"}, status=status.HTTP_200_OK)
+
+
+@swagger_auto_schema(
+    method='post',
+    operation_summary="Start forget password process",
+    operation_description="Start forget password process",
+    parameters=[
+        openapi.Parameter('email', openapi.IN_PATH,
+                          type=openapi.TYPE_STRING)
+    ],
+    responses={200: "OTP Sent", 400: "Bad Request"})
+@api_view(['POST'])
+@permission_classes([AllowAny])
+@authentication_classes([])
+def start_forget_password(request):
+    email = request.data.get('email')
+    if not email:
+        return Response({"message": "Please provide your email address"}, status=status.HTTP_400_BAD_REQUEST)
+    user = User.objects.filter(email=email).first()
+    if not user:
+        return Response({"message": "User  with the email does not exist"}, status=status.HTTP_400_BAD_REQUEST)
+
+    otp_code = generate_otp()
+    Otp.objects.create(user_id=user, otp_code=otp_code)
+    context = {
+        "name": f"{user.first_name} {user.last_name}",
+        "otp": otp_code
+    }
+    send_email("PASSWORD RESET OTP",
+               user.email, "emails/otp.html", context)
+
+    return Response({"message": "OTP Sent"}, status=status.HTTP_200_OK)
+
+
+@swagger_auto_schema(
+    method='patch',
+    operation_summary="Reset password",
+    operation_description="Reset password",
+    parameters=[
+        openapi.Parameter('email', openapi.IN_PATH,
+                          type=openapi.TYPE_STRING),
+        openapi.Parameter('otp', openapi.IN_PATH,
+                          type=openapi.TYPE_STRING),
+    ],
+    request_body=ForgetPasswordSerializer,
+
+    responses={200: "Password reset successfully", 400: "Bad Request"})
+@api_view(['PATCH'])
+@permission_classes([AllowAny])
+@authentication_classes([])
+def reset_password(request):
+    email = request.GET.get('email')
+    otp = request.GET.get('otp')
+
+    if not email or not otp:
+        return Response({"message": "Email and OTP are required"}, status=status.HTTP_400_BAD_REQUEST)
+
+    serializer = ForgetPasswordSerializer(data=request.data)
+    if not serializer.is_valid():
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    new_password = serializer.validated_data.get('password')
+    try:
+        check_otp = Otp.objects.filter(otp_code=otp).values().first()
+
+        if not check_otp:
+            return Response({"message": "Invalid OTP"}, status=status.HTTP_400_BAD_REQUEST)
+
+        user = User.objects.filter(email=email).first()
+        if not user:
+            return Response({"message": "User does not exist"}, status=status.HTTP_400_BAD_REQUEST)
+
+        otp_creation_time = check_otp.get('created_at')
+        if otp_creation_time and (timezone.now() - otp_creation_time) > timedelta(minutes=15):
+            return Response({"message": "OTP has expired."}, status=status.HTTP_400_BAD_REQUEST)
+
+        user.set_password(new_password)
+        user.save()
+
+        Otp.objects.filter(otp_code=otp).delete()
+
+        return Response({"message": "Password reset successfully"}, status=status.HTTP_200_OK)
+
+    except Otp.DoesNotExist:
+        return Response({"message": "Invalid OTP"}, status=status.HTTP_400_BAD_REQUEST)

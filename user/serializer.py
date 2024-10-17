@@ -97,3 +97,20 @@ class LoginSerializer(serializers.Serializer):
         if the user is not active, raise a validation error
         
         """
+
+
+class ForgetPasswordSerializer(serializers.Serializer):
+    password = serializers.CharField(
+        style={'input_type': 'password'}, write_only=True)
+    confirm_password = serializers.CharField(
+        style={'input_type': 'password'}, write_only=True)
+
+    def validate(self, data):
+        password = data.get('password')
+        confirm_password = data.get('confirm_password')
+
+        if password != confirm_password:
+            raise serializers.ValidationError(
+                {"password": "Passwords do not match"}, code=status.HTTP_400_BAD_REQUEST)
+
+        return data
