@@ -147,6 +147,9 @@ SIMPLE_JWT = {
 }
 
 REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'user.authentication.JWTAuthentication',
+    ]
 
 }
 

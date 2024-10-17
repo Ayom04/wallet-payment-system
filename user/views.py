@@ -1,7 +1,7 @@
 from django.shortcuts import render
 from rest_framework.response import Response
 from rest_framework import status, views
-from rest_framework.decorators import api_view
+from rest_framework.decorators import api_view, permission_classes, authentication_classes
 from user.serializer import UserSerializer, LoginSerializer
 from user.authentication import JWTAuthentication
 from wallet.models import Wallet
@@ -13,14 +13,18 @@ from user.models import Otp, User
 from services.email import send_email
 from django.utils import timezone
 from datetime import timedelta
+from rest_framework.permissions import AllowAny
 
 
 @swagger_auto_schema(
     method='post',
+    operation_summary="Create a new user",
     operation_description="Create a new user",
     request_body=UserSerializer,
     responses={201: "User Created", 400: "Bad Request"})
 @api_view(['POST'])
+@permission_classes([AllowAny])
+@authentication_classes([])
 def create_user(request):
     serializer = UserSerializer(data=request.data)
     if serializer.is_valid():
@@ -39,8 +43,8 @@ def create_user(request):
             "name": f"{user.first_name} {user.last_name}",
             "otp": otp_code
         }
-        # send_email("Your One-Time Password (OTP)",
-        #            user.email, "emails/otp.html", context)
+        send_email("Your One-Time Password (OTP)",
+                   user.email, "emails/otp.html", context)
 
         return Response({"message": "user created successfully", "data": {"user": serializer.data, wallet_balance: wallet_balance}}, status=status.HTTP_201_CREATED)
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
@@ -48,10 +52,13 @@ def create_user(request):
 
 @swagger_auto_schema(
     method='post',
+    operation_summary="Verify user's email and otp",
     operation_description="Login a user",
     request_body=LoginSerializer,
     responses={200: "Login Successful", 400: "Bad Request"})
 @api_view(['POST'])
+@permission_classes([AllowAny])
+@authentication_classes([])
 def login(request):
     serializer = LoginSerializer(data=request.data)
     if serializer.is_valid():
@@ -72,10 +79,10 @@ def login(request):
 
 class UserView(views.APIView):
 
-    authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
 
     @swagger_auto_schema(
+        operation_summary="Get user details",
         operation_description="Get user details",
         responses={200: UserSerializer})
     def get(self, request):
@@ -84,6 +91,7 @@ class UserView(views.APIView):
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     @swagger_auto_schema(
+        operation_summary="Update user details",
         operation_description="Update user details",
         request_body=UserSerializer,
         responses={200: UserSerializer, 400: "Bad Request"})
@@ -96,6 +104,7 @@ class UserView(views.APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     @swagger_auto_schema(
+        operation_summary="Delete user",
         operation_description="Delete user",
         responses={204: "User deleted Successfully"})
     def delete(self, request):
@@ -107,9 +116,15 @@ class UserView(views.APIView):
 
 @swagger_auto_schema(
     method='get',
+    operation_summary="Verify User",
     operation_description="Verify user",
+    parameters=[
+        openapi.Parameter('email', openapi.IN_PATH, type=openapi.TYPE_STRING),
+        openapi.Parameter('otp', openapi.IN_PATH, type=openapi.TYPE_STRING)
+    ],
     responses={200: "User Verified", 400: "Bad Request"})
 @api_view(['GET'])
+@permission_classes([AllowAny])
 def verify_user(request, otp, email):
     try:
 
@@ -135,9 +150,14 @@ def verify_user(request, otp, email):
 
 @swagger_auto_schema(
     method='get',
+    operation_summary="Resend OTP",
     operation_description="Resend OTP",
+    parameters=[
+        openapi.Parameter('email', openapi.IN_PATH, type=openapi.TYPE_STRING)
+    ],
     responses={200: "OTP Sent", 400: "Bad Request"})
 @api_view(['GET'])
+@permission_classes([AllowAny])
 def resend_otp(request, email):
     user = User.objects.filter(email=email).first()
     if not user:

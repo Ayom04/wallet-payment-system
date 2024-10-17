@@ -20,7 +20,6 @@ from rest_framework.decorators import authentication_classes, permission_classes
     operation_description="Start a payment transaction"
 )
 @api_view(["POST"])
-@authentication_classes([JWTAuthentication])
 @permission_classes([IsAuthenticated])
 def payment_checkout(request):
     serializer = StartPaymentSerializer(data=request.data)
@@ -60,7 +59,6 @@ def payment_checkout(request):
     operation_description="Verify a payment transaction"
 )
 @api_view(["GET"])
-@authentication_classes([JWTAuthentication])
 @permission_classes([IsAuthenticated])
 def verify_payment(request, payment_reference):
 

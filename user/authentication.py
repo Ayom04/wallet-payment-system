@@ -18,9 +18,9 @@ class JWTAuthentication(authentication.BasicAuthentication):
             raise AuthenticationFailed(
                 {"error": "Account is not active"}, code=status.HTTP_401_UNAUTHORIZED)
 
-        # if not user.is_user_verified:
-        #     raise AuthenticationFailed(
-        #         {"error": "Account is not verified"}, code=status.HTTP_401_UNAUTHORIZED)
+        if not user.is_user_verified:
+            raise AuthenticationFailed(
+                {"error": "Account is not verified"}, code=status.HTTP_401_UNAUTHORIZED)
         token = RefreshToken.for_user(user)
         token['email'] = user.email
         token['_id'] = str(uuid.uuid4())
@@ -77,8 +77,8 @@ class JWTAuthentication(authentication.BasicAuthentication):
             raise AuthenticationFailed(
                 {"error": "Sorry, You're not allowed to carry out this operation."}, code=status.HTTP_401_UNAUTHORIZED)
 
-        # if not user.is_user_verified:
-        #     raise AuthenticationFailed(
-        #         {"error": "User is not verified"}, code=status.HTTP_401_UNAUTHORIZED)
+        if not user.is_user_verified:
+            raise AuthenticationFailed(
+                {"error": "User is not verified"}, code=status.HTTP_401_UNAUTHORIZED)
 
         return user, token
