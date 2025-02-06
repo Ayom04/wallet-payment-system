@@ -46,7 +46,7 @@ def create_user(request):
         send_email("Your One-Time Password (OTP)",
                    user.email, "emails/otp.html", context)
 
-        return Response({"message": "user created successfully", "data": {"user": serializer.data, wallet_balance: wallet_balance}}, status=status.HTTP_201_CREATED)
+        return Response({"message": "user created successfully", "data": {"user": serializer.data}}, status=status.HTTP_201_CREATED)
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
